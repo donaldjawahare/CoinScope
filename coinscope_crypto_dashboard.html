@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoinScope – Bitcoin (BTC) Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a1424; 
+    --panel: #0d192d; 
+    --panel-hover: #12213b;
+    --panel-b: #1d2c47; 
+    --side: #0c1a32;
+    --text: #f2f5fb; 
+    --muted: #9aa7c2; 
+    --dim: #7f8cab;
+    --green: #14e29a; 
+    --red: #ff4b4f; 
+    --purple: #6c47f5; 
+    --purple-l: #a98bff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* App Layout Structure */
+  #app {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+  }
+
+  /* Sidebar Navigation */
+  #sidebar {
+    width: 220px;
+    background: var(--side);
+    border-right: 1px solid #16243d;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    z-index: 100;
+    transition: transform 0.3s ease, width 0.3s ease;
+  }
+
+  .brand-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 18px;
+  }
+
+  .brand-title {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+
+  .nav-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 10px;
+    flex-grow: 1;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 40px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #c9d3e8;
+    cursor: pointer;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .nav svg { flex-shrink: 0; }
+  .nav.active {
+    background: #38297c;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .nav:not(.active):hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+  }
+
+  .nav-bottom {
+    margin-top: auto;
+    padding-bottom: 16px;
+  }
+
+  /* Main Viewport Container */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  /* Top Navigation Header */
+  #header {
+    min-height: 60px;
+    border-bottom: 1px solid #16243d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    background: var(--bg);
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    max-width: 420px;
+  }
+
+  .menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 36px;
+    border: 1px solid #28395a;
+    border-radius: 6px;
+    background: #16233c;
+    padding: 0 12px;
+  }
+
+  .search-bar input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 12px;
+    width: 100%;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .header-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 11px;
+  }
+
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-block .lbl { color: var(--muted); font-size: 9.5px; }
+  .stat-block .val-row { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+
+  .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .avatar {
+    width: 33px;
+    height: 33px;
+    border-radius: 50%;
+    background: #333d7b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #4a589a;
+  }
+
+  /* Main Dashboard Body */
+  .dashboard-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #8a99b5;
+  }
+
+  /* Coin Title Banner */
+  .coin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .coin-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .coin-pricing {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .price-large {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .coin-change-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    font-weight: 700;
+  }
+
+  .action-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 0 16px;
+    height: 33px;
+    border: none;
+    color: #fff;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .btn:active { transform: translateY(1px); }
+  .btn-usd { background: #16233c; border: 1px solid #28395a; }
+  .btn-buy { background: linear-gradient(180deg, #7450ff, #6240ea); box-shadow: 0 4px 12px rgba(116,80,255,0.3); }
+  .btn-buy:hover { background: linear-gradient(180deg, #815eff, #6d4bf2); }
+
+  /* Card Panel Base Styling */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-b);
+    border-radius: 8px;
+    padding: 16px;
+    position: relative;
+  }
+
+  /* Stat Cards Responsive Grid */
+  .grid-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .stat-card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .stat-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .stat-card-title {
+    font-size: 11px;
+    color: #8a99b5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-card-val {
+    font-size: 18.5px;
+    font-weight: 700;
+  }
+
+  .stat-card-sub {
+    font-size: 10px;
+    color: #8a99b5;
+  }
+
+  /* Main Grid Section */
+  .grid-main {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+  }
+
+  .side-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Chart Controls & Container */
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .chart-title {
+    font-size: 14.5px;
+    font-weight: 700;
+  }
+
+  .chart-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .rng-group {
+    display: flex;
+    background: #111f37;
+    border: 1px solid #243452;
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  .rng-group button {
+    border: 0;
+    background: transparent;
+    color: #b3bfd8;
+    font: 500 10px 'Inter', sans-serif;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .rng-group button.on {
+    background: #7050ff;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .tb {
+    border: 1px solid #243452;
+    border-radius: 6px;
+    background: #111f37;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    font-size: 10px;
+    font-weight: 500;
+    color: #dbe3f3;
+    cursor: pointer;
+  }
+  .tb:hover { background: #1a2b4a; }
+
+  .chart-container {
+    width: 100%;
+    height: 220px;
+    position: relative;
+  }
+
+  .chart-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Sentiment Section */
+  .sentiment-box {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .section-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sentiment-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .sentiment-gauge-wrap {
+    position: relative;
+    width: 120px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sentiment-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 10px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  /* Bottom Grid Cards */
+  .grid-bottom {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .progress-bar-wrap {
+    background: #172540;
+    border-radius: 5px;
+    height: 7px;
+    width: 100%;
+    overflow: hidden;
+    margin: 10px 0;
+  }
+
+  .progress-bar-fill {
+    background: linear-gradient(90deg, #6d4cf2, #7f5cff);
+    height: 100%;
+    border-radius: 5px;
+  }
+
+  .watchlist-action-btn {
+    width: 100%;
+    background: #2a2070;
+    border: 1px solid #6a4ff0;
+    border-radius: 6px;
+    padding: 10px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 11.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s;
+  }
+
+  .watchlist-action-btn:hover {
+    background: #3a2d92;
+    border-color: #7d64f8;
+  }
+
+  /* Responsive Tables */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  th {
+    color: var(--muted);
+    font-weight: 500;
+    padding: 8px;
+    border-bottom: 1px solid #1a2942;
+    font-size: 8.5px;
+  }
+
+  td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #16243d;
+  }
+
+  tr.row-hover {
+    transition: background 0.15s;
+  }
+  tr.row-hover:hover {
+    background: var(--panel-hover);
+  }
+
+  .exchange-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+
+  .star {
+    cursor: pointer;
+    fill: none;
+    stroke: #8795b3;
+    transition: all 0.2s;
+  }
+  .star:hover, .star.on {
+    fill: #f5c518;
+    stroke: #f5c518;
+  }
+
+  /* Responsive Breakpoints */
+  @media (max-width: 1100px) {
+    .grid-main {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .grid-bottom {
+      grid-template-columns: 1fr;
+    }
+    .header-stats {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    #sidebar {
+      position: fixed;
+      left: -220px;
+      height: 100vh;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+    }
+    #sidebar.active {
+      left: 0;
+    }
+    .menu-toggle {
+      display: block;
+    }
+    .coin-pricing {
+      align-items: flex-start;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside id="sidebar">
+    <div class="brand-area">
+      <svg width="24" height="22" viewBox="0 0 24 22">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5bff"/><stop offset="1" stop-color="#18c8ff"/></linearGradient></defs>
+        <path d="M18 5.2A9.4 9.4 0 1 0 18 16.8" fill="none" stroke="url(#lg)" stroke-width="4.6" stroke-linecap="round"/>
+        <path d="M15 14.5l4.5-6 4.5 6z" fill="#18c8ff" transform="translate(-1,-2) scale(.9)"/>
+      </svg>
+      <div class="brand-title">CoinScope</div>
+    </div>
+
+    <div class="nav-container">
+      <div class="nav">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aab6d0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v10H3z"/><path d="M9 21v-6h6v6"/></svg>
+        <span>Overview</span>
+      </div>
+      <div class="nav active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b9a9ff" stroke-width="1.8" stroke-linecap="round"><path d="M5 21V12M12 21V4M19 21V9"/></svg>
+        <span>Markets</span>
+      </div>
+      <div class="nav">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aab6d0" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg>
+        <span>Watchlist</span>
+      </div>
+      <div class="nav">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aab6d0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16M16 4l4 4-4 4M20 16H4M8 12l-4 4 4 4"/></svg>
+        <span>Compare</span>
+      </div>
+      <div class="nav">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aab6d0" stroke-width="1.6" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>
+        <span>Portfolio</span>
+      </div>
+      
+      <div class="nav-container nav-bottom">
+        <div class="nav">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aab6d0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2l1.8 2.4 3-.5.9 2.9 2.8 1.2-.9 2.9 1.4 2.7-2.4 1.8-.3 3-3 .4-1.9 2.3-2.5-1.7-2.7 1.3-1.3-2.7-3-.6.3-3-2-2.3 1.9-2.3-.5-3 2.9-1 1-2.9 3 .3z"/></svg>
+          <span>Settings</span>
+        </div>
+        <div class="nav">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aab6d0" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.3a2.9 2.9 0 1 1 4.3 2.5c-1 .6-1.5 1.1-1.5 2.2M12 17.4v.1"/></svg>
+          <span>Help &amp; Support</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN CONTAINER ============ -->
+  <main class="main-content">
+    <header id="header">
+      <div class="header-left">
+        <button class="menu-toggle" id="menuToggle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <div class="search-bar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aab6d0" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7.5"/><path d="M21 21l-5-5"/></svg>
+          <input type="text" placeholder="Search coins, tokens..." />
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="header-stats">
+          <div class="stat-block">
+            <span class="lbl">Global Market Cap</span>
+            <div class="val-row"><span>$2.46T</span><span class="green">+1.32%</span></div>
+          </div>
+          <div style="width:1px; height:24px; background:#16243d;"></div>
+          <div class="stat-block">
+            <span class="lbl">24h Volume</span>
+            <div class="val-row"><span>$112.8B</span><span class="green">+6.21%</span></div>
+          </div>
+        </div>
+
+        <div class="user-profile">
+          <svg width="16" height="17" viewBox="0 0 24 24" fill="none" stroke="#aab6d0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="cursor: pointer;"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <div class="avatar">DJ</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="dashboard-body">
+      <!-- Breadcrumb -->
+      <div class="breadcrumb">
+        <span>Markets</span> / <span>Coins</span> / <span style="color: #e1e8f5; font-weight: 500;">Bitcoin</span>
+      </div>
+
+      <!-- Coin Header Information -->
+      <div class="coin-header">
+        <div class="coin-info">
+          <svg width="42" height="42" viewBox="0 0 44 44">
+            <defs><linearGradient id="btcg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffa51f"/><stop offset="1" stop-color="#f7861a"/></linearGradient></defs>
+            <circle cx="22" cy="22" r="22" fill="url(#btcg)"/>
+            <g transform="rotate(14 22 22)" fill="#fff">
+              <path d="M15.8 12h6.9c3.3 0 5.4 1.5 5.4 4.2 0 1.8-1 3.1-2.6 3.7 2.2.5 3.5 2 3.5 4.2 0 3.1-2.4 4.9-6 4.9h-7.2zm4 6.3h2.5c1.4 0 2.2-.6 2.2-1.7 0-1-.8-1.6-2.1-1.6h-2.6zm0 7.2h3c1.5 0 2.4-.7 2.4-1.9 0-1.2-.9-1.8-2.4-1.8h-3z" fill-rule="evenodd"/>
+              <rect x="18.6" y="8.8" width="2.1" height="4" rx=".6"/><rect x="22.8" y="8.8" width="2.1" height="4" rx=".6"/>
+              <rect x="18.6" y="29.6" width="2.1" height="4" rx=".6"/><rect x="22.8" y="29.6" width="2.1" height="4" rx=".6"/>
+            </g>
+          </svg>
+          <div>
+            <div style="font-size: 23px; font-weight: 700; letter-spacing: -.3px;">Bitcoin (BTC)</div>
+            <div style="font-size: 11.5px; color: #8a99b5;">BTC/USD</div>
+          </div>
+        </div>
+
+        <div class="coin-pricing">
+          <div class="price-large">$67,482.90</div>
+          <div class="coin-change-row">
+            <span class="green" style="display:flex; align-items:center; gap:4px;">
+              <svg width="10" height="10" viewBox="0 0 12 11"><path d="M6 0l6 11H0z" fill="#14e29a"/></svg> +2.84%
+            </span>
+            <span style="font-size: 10px; font-weight: 500; color: #8a99b5;">(24h)</span>
+          </div>
+          <div class="action-group">
+            <button class="btn btn-usd">USD <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M5 9l7 7 7-7"/></svg></button>
+            <button class="btn btn-buy">Buy <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M5 9l7 7 7-7"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat Cards Grid -->
+      <div class="grid-stats">
+        <div class="panel">
+          <div class="stat-card-content">
+            <div class="stat-card-info">
+              <div class="stat-card-title">Market Cap <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8795b3" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.1"/></svg></div>
+              <div class="stat-card-val">$1.33T</div>
+              <div class="green" style="font-size:10.5px; font-weight:700;">+2.84%</div>
+            </div>
+            <svg class="spark" data-seed="3" data-color="#14e29a" width="49" height="37" viewBox="0 0 49 37" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="stat-card-content">
+            <div class="stat-card-info">
+              <div class="stat-card-title">24h Volume <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8795b3" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.1"/></svg></div>
+              <div class="stat-card-val">$28.6B</div>
+              <div class="green" style="font-size:10.5px; font-weight:700;">+12.43%</div>
+            </div>
+            <svg class="spark" data-seed="11" data-color="#14e29a" data-flat="1" width="49" height="30" viewBox="0 0 49 30" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="stat-card-content">
+            <div class="stat-card-info">
+              <div class="stat-card-title">Circulating Supply <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8795b3" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.1"/></svg></div>
+              <div class="stat-card-val">19.72M BTC</div>
+              <div class="stat-card-sub">93.9% of max supply</div>
+            </div>
+            <svg class="spark" data-seed="21" data-color="#14e29a" width="78" height="35" viewBox="0 0 78 35" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="stat-card-content">
+            <div class="stat-card-info">
+              <div class="stat-card-title">Max Supply <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8795b3" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.1"/></svg></div>
+              <div class="stat-card-val">21M BTC</div>
+            </div>
+            <svg class="spark" data-seed="31" data-color="#7a55ff" width="93" height="35" viewBox="0 0 93 35" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Section: Chart & Sentiment / Top Markets -->
+      <div class="grid-main">
+        <!-- BTC Price Chart Panel -->
+        <div class="panel">
+          <div class="chart-header">
+            <div class="chart-title">BTC Price</div>
+            <div class="chart-controls">
+              <div class="rng-group" id="rng">
+                <button>1H</button><button>24H</button><button class="on">7D</button><button>1M</button><button>1Y</button><button>ALL</button>
+              </div>
+              <div class="tb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b3bfd8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l5-8 4 4 4-7 5 5"/><path d="M3 4v16h18" opacity=".5"/></svg>Indicators</div>
+              <div class="tb"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b3bfd8" stroke-width="1.8" stroke-linecap="round"><path d="M7 3v18M17 3v18M4 8h6v8H4zM14 6h6v9h-6z"/></svg>Candlestick</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <svg id="chart" viewBox="0 0 691 236" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+
+        <!-- Right Side Column -->
+        <div class="side-col">
+          <!-- Market Sentiment Panel -->
+          <div class="panel sentiment-box">
+            <div class="section-title">Market Sentiment <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8795b3" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.1"/></svg></div>
+            <div class="sentiment-content">
+              <div class="sentiment-gauge-wrap">
+                <svg id="gauge" width="120" height="80" viewBox="0 0 160 100"></svg>
+                <div style="position: absolute; bottom: 0; text-align: center; width: 100%;">
+                  <div style="font-size: 18px; font-weight: 700;">68<span style="font-size: 10px; color: var(--muted);">/ 100</span></div>
+                  <div class="green" style="font-size: 10.5px; font-weight: 600;">Positive</div>
+                </div>
+              </div>
+              <div class="sentiment-legend">
+                <div class="legend-item"><div class="legend-dot" style="background: #14e29a;"></div><span style="color:#e4eaf7">68% Bullish</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background: #5e6d98;"></div><span style="color:#e4eaf7">26% Neutral</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background: #ff4b4f;"></div><span style="color:#e4eaf7">6% Bearish</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Markets Panel -->
+          <div class="panel">
+            <div class="section-title" style="justify-content: space-between; margin-bottom: 12px;">
+              <span>Top Markets</span>
+              <a href="#" style="font-size: 10.5px; color: var(--purple-l); text-decoration: none; font-weight: 500;">See All</a>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 20px;">#</th>
+                    <th>Exchange</th>
+                    <th>Pair</th>
+                    <th class="text-right">Price</th>
+                  </tr>
+                </thead>
+                <tbody id="markets">
+                  <!-- Populated via script -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Three Cards Grid -->
+      <div class="grid-bottom">
+        <div class="panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div class="section-title">Token Supply <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8795b3" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.1"/></svg></div>
+            <span style="font-size: 11px; font-weight: 600;">93.9%</span>
+          </div>
+          <div style="font-size: 14.5px; font-weight: 700;">19.72M BTC</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" style="width: 93.9%;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 9px; color: #8a99b5;">
+            <span>Circulating Supply: <strong style="color:#e4eaf7">19.72M BTC</strong></span>
+            <span>Max Supply: <strong style="color:#e4eaf7">21M BTC</strong></span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section-title" style="margin-bottom: 6px;">Holders <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8795b3" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.1"/></svg></div>
+          <div style="font-size: 15.5px; font-weight: 700; margin-bottom: 2px;">1.24M</div>
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 9.5px; font-weight: 600;" class="green">
+            <svg width="8" height="8" viewBox="0 0 12 11"><path d="M6 0l6 11H0z" fill="#14e29a"/></svg> +1.8% <span style="font-weight: 400; color: #8a99b5;">this month</span>
+          </div>
+          <div style="margin-top: 8px;">
+            <svg class="spark" data-seed="41" data-color="#14e29a" data-nofill="1" width="100%" height="20" viewBox="0 0 56 15" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+
+        <div class="panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div class="section-title" style="margin-bottom: 6px;">Watchlist</div>
+            <div style="font-size: 11px; color: #8a99b5;">Track market developments</div>
+          </div>
+          <button class="watchlist-action-btn" id="wlbtn">
+            <svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7L12 17.1 6 20.4l1.3-6.7-5-4.7 6.8-.8z" fill="#b8a2ff" stroke="#b8a2ff" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <span id="wltext">Add to Watchlist</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Compare Coins Table Section -->
+      <div class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div class="section-title" style="font-size: 13.5px;">Compare Coins</div>
+          <button class="btn btn-usd" style="height: 26px; font-size: 10px; padding: 0 10px;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#c4cee3" stroke-width="2" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg> Add Coins
+          </button>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 20px;">#</th>
+                <th>Coin</th>
+                <th class="text-right">Price</th>
+                <th class="text-right">24h Change</th>
+                <th class="text-right">Market Cap</th>
+                <th class="text-right">24h Volume</th>
+                <th class="text-right">Circulating Supply</th>
+                <th class="text-center" style="width: 50px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="coins">
+              <!-- Populated via script -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // Mobile Sidebar Toggle
+  const menuToggle = document.getElementById('menuToggle');
+  const sidebar = document.getElementById('sidebar');
+  if (menuToggle && sidebar) {
+    menuToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+    });
+  }
+
+  // Seeded PRNG
+  function rng(seed){ let s = seed*9301+49297; return ()=> (s = (s*9301+49297)%233280)/233280; }
+
+  // Render SVG Sparklines
+  document.querySelectorAll('.spark').forEach((el, idx)=>{
+    const w = +el.getAttribute('width') || 100, h = +el.getAttribute('height') || 30;
+    const color = el.dataset.color, r = rng(+el.dataset.seed || idx);
+    const n = 24, pts = [];
+    for(let i=0; i<n; i++){
+      const t = i/(n-1);
+      let base = el.dataset.flat ? .35 + .35*Math.sin(t*5)*.3 + t*.3 : .12 + t*.65;
+      if(!el.dataset.flat && i===3) base -= .12;
+      pts.push(Math.max(.05, Math.min(.95, base + (r()-.5)*.25)));
+    }
+    pts[n-1] = Math.max(pts[n-1], .85);
+    const xy = pts.map((p,i)=>[i/(n-1)*w, h - p*h]);
+    const line = xy.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join('');
+    const id = 'sg'+idx;
+    let svg = '';
+    if(!el.dataset.nofill){
+      svg += `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".4"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>`;
+      svg += `<path d="${line}L${w},${h}L0,${h}Z" fill="url(#${id})"/>`;
+    }
+    svg += `<path d="${line}" fill="none" stroke="${color}" stroke-width="1.4" stroke-linejoin="round"/>`;
+    el.innerHTML = svg;
+  });
+
+  // BTC Price Main Interactive Chart Generator
+  (function(){
+    const svg = document.getElementById('chart');
+    if(!svg) return;
+    const X0 = 50, X1 = 670, XEND = 600;
+    const yOf = v => 180 - (v-56000)*0.008;
+    const key = [[0,56300],[.05,57200],[.10,58900],[.15,58100],[.20,59400],[.25,60800],[.30,62200],[.38,60900],[.45,61800],[.55,62900],[.65,62100],[.75,64500],[.85,65800],[.92,67482.90]];
+    const r = rng(12), N = 120, vals = [];
+    
+    for(let i=0; i<=N; i++){
+      const f = i/N*0.92;
+      let k=0; while(k<key.length-2 && key[k+1][0] < f) k++;
+      const a=key[k], b=key[k+1], t=(f-a[0])/(b[0]-a[0]);
+      const s = t*t*(3-2*t);
+      let v = a[1] + (b[1]-a[1])*s + (r()-.5)*350;
+      vals.push(v);
+    }
+    vals[N] = 67482.90;
+    const pts = vals.map((v,i)=>[X0 + (XEND-X0)*i/N, yOf(v)]);
+    
+    let s = `<defs>
+      <linearGradient id="ar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14e29a" stop-opacity=".35"/><stop offset="1" stop-color="#14e29a" stop-opacity="0"/></linearGradient>
+      <filter id="glow" x="-5%" y="-20%" width="110%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
+    </defs>`;
+    
+    // Grid & labels
+    [72000,68000,64000,60000,56000].forEach(v=>{
+      const y = yOf(v);
+      s += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" stroke="#172740" stroke-width="1"/>`;
+      s += `<text x="14" y="${y+3.5}" font-size="9.5" fill="#8a99b5" font-family="Inter,sans-serif">${v.toLocaleString('en-US')}</text>`;
+    });
+    
+    const dates = ['Oct 11', 'Oct 12', 'Oct 13', 'Oct 14', 'Oct 15'];
+    dates.forEach((d, i)=>{
+      const x = X0 + i * 135;
+      s += `<line x1="${x}" x2="${x}" y1="52" y2="208" stroke="#172740" stroke-width="1"/>`;
+      s += `<text x="${x}" y="222" font-size="9" fill="#8a99b5" text-anchor="middle" font-family="Inter,sans-serif">${d}</text>`;
+    });
+    
+    // Volume Bars
+    const vr = rng(33), bw = 2, cnt = Math.floor((XEND-X0)/3);
+    for(let i=0; i<=cnt; i++){
+      const x = X0 + i*3;
+      const hgt = 4 + Math.pow(vr(), 2)*18 + (i>cnt-10? vr()*10 : 0);
+      s += `<rect x="${x.toFixed(1)}" y="${(208-hgt).toFixed(1)}" width="${bw}" height="${hgt.toFixed(1)}" fill="#314268" opacity=".8"/>`;
+    }
+    
+    // Main Area & Path
+    const line = pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join('');
+    s += `<path d="${line}L${XEND},208L${X0},208Z" fill="url(#ar)"/>`;
+    s += `<path d="${line}" fill="none" stroke="#14e29a" stroke-width="2.5" opacity=".4" filter="url(#glow)"/>`;
+    s += `<path d="${line}" fill="none" stroke="#18e89f" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+    
+    // End active marker & badge
+    const e = pts[N];
+    s += `<circle cx="${e[0]}" cy="${e[1]}" r="5" fill="#14e29a" opacity=".3"/><circle cx="${e[0]}" cy="${e[1]}" r="3.5" fill="#14e29a" stroke="#0d192d" stroke-width="1"/>`;
+    s += `<rect x="612" y="80" width="58" height="18" rx="3.5" fill="#0c6b4c" stroke="#14e29a" stroke-width="1"/>`;
+    s += `<text x="641" y="92.5" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="Inter,sans-serif">67,482.90</text>`;
+    
+    // Crosshair hover element
+    s += `<g id="hov" style="display:none"><line id="hl" y1="52" y2="208" stroke="#5c6d94" stroke-dasharray="3 3"/><circle id="hc" r="3.5" fill="#14e29a"/><g id="ht"><rect id="hr" width="82" height="18" rx="4" fill="#16233c" stroke="#2c3d5e"/><text id="hx" font-size="9.5" font-weight="600" fill="#fff" text-anchor="middle" font-family="Inter,sans-serif"></text></g></g>`;
+    
+    svg.innerHTML = s;
+
+    // Mouseover crosshairs
+    svg.addEventListener('mousemove', ev=>{
+      const rc = svg.getBoundingClientRect(), k = 691/rc.width;
+      const x = (ev.clientX-rc.left)*k;
+      if(x<X0 || x>XEND){ document.getElementById('hov').style.display='none'; return; }
+      const i = Math.round((x-X0)/(XEND-X0)*N), p = pts[i];
+      const hv = document.getElementById('hov'); hv.style.display='';
+      document.getElementById('hl').setAttribute('x1', p[0]); document.getElementById('hl').setAttribute('x2', p[0]);
+      document.getElementById('hc').setAttribute('cx', p[0]); document.getElementById('hc').setAttribute('cy', p[1]);
+      const bx = Math.min(p[0]-41, 580), by = Math.max(p[1]-26, 45);
+      document.getElementById('hr').setAttribute('x', bx); document.getElementById('hr').setAttribute('y', by);
+      const t = document.getElementById('hx'); t.setAttribute('x', bx+41); t.setAttribute('y', by+12.5);
+      t.textContent = '$' + vals[i].toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    });
+    svg.addEventListener('mouseleave', ()=> document.getElementById('hov').style.display='none');
+  })();
+
+  // Render Gauge Arc
+  (function(){
+    const svg = document.getElementById('gauge');
+    if(!svg) return;
+    const cx = 80, cy = 80, R = 55;
+    const pol = (deg)=>{ const a = deg*Math.PI/180; return [cx + R*Math.cos(a), cy - R*Math.sin(a)]; };
+    const start = 175, pct = 0.68, sweep = 190;
+    const midDeg = start - sweep*pct, endDeg = start - sweep;
+    const P0 = pol(start), P1 = pol(midDeg), P2 = pol(endDeg);
+    
+    let s = `<defs><linearGradient id="gg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#10e08a"/><stop offset="1" stop-color="#2ee9a6"/></linearGradient></defs>`;
+    s += `<path d="M${P1[0]},${P1[1]} A${R},${R} 0 0 1 ${P2[0]},${P2[1]}" fill="none" stroke="#253554" stroke-width="6" stroke-linecap="butt"/>`;
+    s += `<path d="M${P0[0]},${P0[1]} A${R},${R} 0 0 1 ${P1[0]},${P1[1]}" fill="none" stroke="url(#gg)" stroke-width="6" stroke-linecap="round"/>`;
+    s += `<circle cx="${P2[0]}" cy="${P2[1]}" r="3.5" fill="#ff4b4f"/>`;
+    svg.innerHTML = s;
+  })();
+
+  // Populate Top Markets Table
+  const topMarketsData = [
+    { i:1, name:'Binance', pair:'BTC/USDT', price:'$67,521.30', bg:'#f3ba2f', c:'B' },
+    { i:2, name:'Coinbase', pair:'BTC/USD', price:'$67,498.12', bg:'#1652f0', c:'C' },
+    { i:3, name:'OKX', pair:'BTC/USDT', price:'$67,502.44', bg:'#ffffff', c:'O', tc:'#000' },
+    { i:4, name:'Bybit', pair:'BTC/USDT', price:'$67,509.21', bg:'#f7a600', c:'B', tc:'#000' },
+    { i:5, name:'Kraken', pair:'BTC/USD', price:'$67,495.10', bg:'#7b4dff', c:'K' }
+  ];
+  
+  const marketTbody = document.getElementById('markets');
+  if(marketTbody) {
+    marketTbody.innerHTML = topMarketsData.map(m => `
+      <tr class="row-hover">
+        <td style="color:#8a99b5; font-size:9.5px">${m.i}</td>
+        <td>
+          <div class="exchange-cell">
+            <div style="width:14px; height:14px; border-radius:50%; background:${m.bg}; color:${m.tc||'#fff'}; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:8px">${m.c}</div>
+            <span style="font-weight:600; font-size:10px; color:#f2f5fb">${m.name}</span>
+          </div>
+        </td>
+        <td style="color:#8a99b5; font-size:9.5px">${m.pair}</td>
+        <td class="text-right" style="font-weight:600; font-size:10px; color:#f2f5fb">${m.price}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Populate Compare Coins Table
+  const compareCoinsData = [
+    { i:1, name:'Bitcoin', sym:'BTC', price:'$67,482.90', chg:'+2.84%', up:true, cap:'$1.33T', vol:'$28.6B', sup:'19.72M BTC', bg:'#f7931a', c:'B' },
+    { i:2, name:'Ethereum', sym:'ETH', price:'$2,634.18', chg:'+1.92%', up:true, cap:'$317.6B', vol:'$15.2B', sup:'120.4M ETH', bg:'#627eea', c:'Ξ' },
+    { i:3, name:'Solana', sym:'SOL', price:'$155.42', chg:'-0.64%', up:false, cap:'$72.8B', vol:'$4.6B', sup:'468.2M SOL', bg:'#14f195', c:'S', tc:'#000' },
+    { i:4, name:'BNB', sym:'BNB', price:'$593.21', chg:'+1.37%', up:true, cap:'$86.4B', vol:'$2.9B', sup:'145.9M BNB', bg:'#f3ba2f', c:'B', tc:'#000' },
+    { i:5, name:'XRP', sym:'XRP', price:'$0.52', chg:'-1.21%', up:false, cap:'$29.1B', vol:'$1.8B', sup:'56.1B XRP', bg:'#23292f', c:'X' }
+  ];
+
+  const coinsTbody = document.getElementById('coins');
+  if(coinsTbody) {
+    coinsTbody.innerHTML = compareCoinsData.map(c => `
+      <tr class="row-hover">
+        <td style="color:#8a99b5; font-size:10px">${c.i}</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:7px;">
+            <div style="width:16px; height:16px; border-radius:50%; background:${c.bg}; color:${c.tc||'#fff'}; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:9px">${c.c}</div>
+            <span style="font-weight:600; color:#fff">${c.name}</span>
+            <span style="color:#8a99b5; font-size:9px">${c.sym}</span>
+          </div>
+        </td>
+        <td class="text-right" style="font-weight:600; color:#fff">${c.price}</td>
+        <td class="text-right ${c.up ? 'green' : 'red'}" style="font-weight:600;">${c.up ? '▲' : '▼'} ${c.chg}</td>
+        <td class="text-right" style="color:#d1dbe8">${c.cap}</td>
+        <td class="text-right" style="color:#d1dbe8">${c.vol}</td>
+        <td class="text-right" style="color:#d1dbe8">${c.sup}</td>
+        <td class="text-center">
+          <svg class="star" width="13" height="13" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // Interactive Toggles
+  document.addEventListener('click', e => {
+    if (e.target.closest('.star')) {
+      e.target.closest('.star').classList.toggle('on');
+    }
+  });
+
+  const wlBtn = document.getElementById('wlbtn');
+  if (wlBtn) {
+    wlBtn.addEventListener('click', () => {
+      wlBtn.classList.toggle('on');
+      const txt = document.getElementById('wltext');
+      txt.textContent = wlBtn.classList.contains('on') ? 'In Watchlist' : 'Add to Watchlist';
+    });
+  }
+
+  document.querySelectorAll('#rng button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#rng button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+    });
+  });
+</script>
+</body>
+</html>
